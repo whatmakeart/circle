@@ -22,6 +22,8 @@ canvas.addEventListener("mousemove", (event) => {
 
 // Lasers
 const lasers = [];
+const laserWidth = 5; // Increased width
+const laserHeight = 15; // Increased height
 
 canvas.addEventListener("click", () => {
   lasers.push({
@@ -29,6 +31,9 @@ canvas.addEventListener("click", () => {
     y: canvas.height - circleRadius,
   });
 });
+
+// Scorekeeping
+let score = 0;
 
 // Bricks
 const numBrickRows = 4;
@@ -91,6 +96,7 @@ function gameLoop() {
             brick.status = 0; // Mark brick as broken
             lasers.splice(laserIndex, 1); // Remove laser
             createParticles(brick.x, brick.y);
+            score += 10; // Increment score when a brick is destroyed
           }
         }
       }
@@ -115,6 +121,11 @@ function gameLoop() {
     }
   });
 
+  // Draw the Score
+  ctx.font = "24px Arial";
+  ctx.fillStyle = "white";
+  ctx.fillText("Score: " + score, 20, 40);
+
   requestAnimationFrame(gameLoop);
 }
 
@@ -127,7 +138,7 @@ function drawCircle() {
 function drawLasers() {
   lasers.forEach((laser, index) => {
     ctx.fillStyle = "red";
-    ctx.fillRect(laser.x, laser.y, 2, 10);
+    ctx.fillRect(laser.x, laser.y, laserWidth, laserHeight); // Use the new width and height
     laser.y -= 5; // Laser moves up
 
     // Remove lasers off-screen
