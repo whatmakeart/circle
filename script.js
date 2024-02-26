@@ -1,9 +1,19 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Image Loading
+const circleImage = new Image();
+circleImage.src = "circle.png";
+
+const backgroundImage = new Image();
+backgroundImage.src = "background.jpg";
+
+const brickImage = new Image();
+brickImage.src = "brick.jpg";
+
 // Circle (Player)
 let circleX = canvas.width / 2;
-const circleRadius = 10;
+const circleRadius = 30;
 
 // Mouse Tracking
 canvas.addEventListener("mousemove", (event) => {
@@ -26,9 +36,17 @@ const bricksPerRow = 8;
 const brickWidth = 40;
 const brickHeight = 20;
 const brickPadding = 10;
-const brickOffsetTop = 30;
-const brickOffsetLeft = 30;
+let brickOffsetTop = 30;
+let brickOffsetLeft = 30;
 const bricks = [];
+
+function calculateBrickOffsets() {
+  brickOffsetLeft = (canvas.width - (bricksPerRow * brickWidth + (bricksPerRow - 1) * brickPadding)) / 2;
+  brickOffsetTop = 30; // You can adjust the top offset as desired
+}
+
+// Calculate offsets before creating bricks (Do this once)
+calculateBrickOffsets();
 
 for (let row = 0; row < numBrickRows; row++) {
   bricks[row] = [];
@@ -44,6 +62,7 @@ for (let row = 0; row < numBrickRows; row++) {
 // Collision Detection and Updates
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // Draw the background
 
   // Temporary placeholders instead of images
   drawCircle();
@@ -59,11 +78,15 @@ function gameLoop() {
       for (let col = 0; col < bricksPerRow; col++) {
         const brick = bricks[row][col];
         if (brick.status === 1) {
+          const brickX = col * (brickWidth + brickPadding) + brickOffsetLeft;
+          const brickY = row * (brickHeight + brickPadding) + brickOffsetTop;
+
+          // Adjust collision check by the offset
           if (
-            laser.x > brick.x &&
-            laser.x < brick.x + brickWidth &&
-            laser.y > brick.y &&
-            laser.y < brick.y + brickHeight
+            laser.x > brickX - brickOffsetLeft &&
+            laser.x < brickX - brickOffsetLeft + brickWidth &&
+            laser.y > brickY - brickOffsetTop &&
+            laser.y < brickY - brickOffsetTop + brickHeight
           ) {
             brick.status = 0; // Mark brick as broken
             lasers.splice(laserIndex, 1); // Remove laser
@@ -96,12 +119,9 @@ function gameLoop() {
 }
 
 // Drawing Functions
+// Drawing Functions
 function drawCircle() {
-  ctx.beginPath();
-  ctx.arc(circleX, canvas.height - circleRadius, circleRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "blue";
-  ctx.fill();
-  ctx.closePath();
+  ctx.drawImage(circleImage, circleX - circleImage.width / 2, canvas.height - circleImage.height);
 }
 
 function drawLasers() {
@@ -121,10 +141,13 @@ function drawBricks() {
   for (let row = 0; row < numBrickRows; row++) {
     for (let col = 0; col < bricksPerRow; col++) {
       if (bricks[row][col].status === 1) {
-        const brickX = bricks[row][col].x;
-        const brickY = bricks[row][col].y;
-        ctx.fillStyle = "green"; // Brick color
-        ctx.fillRect(brickX, brickY, brickWidth, brickHeight);
+        const brickX = col * (brickWidth + brickPadding) + brickOffsetLeft;
+        const brickY = row * (brickHeight + brickPadding) + brickOffsetTop;
+
+        // Adjusted positioning
+        const relativeX = brickX / canvas.width;
+        const relativeY = brickY / canvas.height;
+        ctx.drawImage(brickImage, relativeX * canvas.width, relativeY * canvas.height, brickWidth, brickHeight);
       }
     }
   }
@@ -149,11 +172,18 @@ function createParticles(x, y) {
   }
 }
 
-gameLoop(); // Start the game loop
+// Ensure images are loaded before starting the game loop
+circleImage.onload =
+  backgroundImage.onload =
+  brickImage.onload =
+    function () {
+      gameLoop();
+    };
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  calculateBrickOffsets(); // Recalculate when the canvas resizes
 }
 
 // Call on load and when the window is resized
