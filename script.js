@@ -3,13 +3,16 @@ const ctx = canvas.getContext("2d");
 
 // Image Loading
 const circleImage = new Image();
-circleImage.src = "circle.png";
+circleImage.src = "spaceship_circle.png";
 
 const backgroundImage = new Image();
 backgroundImage.src = "background.jpg";
 
 const brickImage = new Image();
 brickImage.src = "brick.jpg";
+
+// Sound Loading
+const laserSound = new Audio("laser.mp3");
 
 // Circle (Player)
 let circleX = canvas.width / 2;
@@ -30,6 +33,8 @@ canvas.addEventListener("click", () => {
     x: circleX,
     y: canvas.height - circleRadius,
   });
+  laserSound.currentTime = 0; // Reset sound to start
+  laserSound.play(); // Play laser sound
 });
 
 // Scorekeeping
@@ -86,12 +91,14 @@ function gameLoop() {
           const brickX = col * (brickWidth + brickPadding) + brickOffsetLeft;
           const brickY = row * (brickHeight + brickPadding) + brickOffsetTop;
 
+          // ... rest of your collision con
+
           // Adjust collision check by the offset
           if (
-            laser.x > brickX - brickOffsetLeft &&
-            laser.x < brickX - brickOffsetLeft + brickWidth &&
-            laser.y > brickY - brickOffsetTop &&
-            laser.y < brickY - brickOffsetTop + brickHeight
+            laser.x > brickX && // Direct comparison without adjustments
+            laser.x < brickX + brickWidth &&
+            laser.y > brickY &&
+            laser.y < brickY + brickHeight
           ) {
             brick.status = 0; // Mark brick as broken
             lasers.splice(laserIndex, 1); // Remove laser
@@ -100,6 +107,10 @@ function gameLoop() {
           }
         }
       }
+    }
+    // Inside the gameLoop function, after handling all updates
+    if (checkLevelCompletion()) {
+      generateLevel(); // Generate a new level
     }
   });
 
@@ -124,7 +135,7 @@ function gameLoop() {
   // Draw the Score
   ctx.font = "24px Arial";
   ctx.fillStyle = "white";
-  ctx.fillText("Score: " + score, 20, 40);
+  ctx.fillText("Score: " + score, 20, canvas.height - 60);
 
   requestAnimationFrame(gameLoop);
 }
@@ -155,10 +166,8 @@ function drawBricks() {
         const brickX = col * (brickWidth + brickPadding) + brickOffsetLeft;
         const brickY = row * (brickHeight + brickPadding) + brickOffsetTop;
 
-        // Adjusted positioning
-        const relativeX = brickX / canvas.width;
-        const relativeY = brickY / canvas.height;
-        ctx.drawImage(brickImage, relativeX * canvas.width, relativeY * canvas.height, brickWidth, brickHeight);
+        // Directly use calculated positions
+        ctx.drawImage(brickImage, brickX, brickY, brickWidth, brickHeight);
       }
     }
   }
@@ -194,9 +203,54 @@ circleImage.onload =
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  calculateBrickOffsets(); // Recalculate when the canvas resizes
+  calculateBrickOffsets(); // Recalculate offsets
+  createBricks(); // Recreate bricks with new positions
 }
 
 // Call on load and when the window is resized
 window.addEventListener("load", resizeCanvas);
 window.addEventListener("resize", resizeCanvas);
+
+function createBricks() {
+  bricks.length = 0; // Clear existing bricks
+  for (let row = 0; row < numBrickRows; row++) {
+    bricks[row] = [];
+    for (let col = 0; col < bricksPerRow; col++) {
+      bricks[row][col] = {
+        x: col * (brickWidth + brickPadding) + brickOffsetLeft,
+        y: row * (brickHeight + brickPadding) + brickOffsetTop,
+        status: 1,
+      };
+    }
+  }
+}
+
+// Initially create bricks and also after resizing
+createBricks();
+
+function checkLevelCompletion() {
+  for (let row = 0; row < numBrickRows; row++) {
+    for (let col = 0; col < bricksPerRow; col++) {
+      if (bricks[row][col].status === 1) {
+        return false; // Level is not yet completed
+      }
+    }
+  }
+  return true; // Level is completed
+}
+
+function generateLevel() {
+  // Optional: Change numBrickRows or bricksPerRow here for variety
+  calculateBrickOffsets(); // Recalculate offsets based on potential new row/col counts
+
+  for (let row = 0; row < numBrickRows; row++) {
+    bricks[row] = [];
+    for (let col = 0; col < bricksPerRow; col++) {
+      bricks[row][col] = {
+        x: col * (brickWidth + brickPadding) + brickOffsetLeft,
+        y: row * (brickHeight + brickPadding) + brickOffsetTop,
+        status: 1, // Reset brick status
+      };
+    }
+  }
+}
